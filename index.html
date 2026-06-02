@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Klavi · IR Target Dashboard — Money20/20 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --blue-50:#E6F1FB; --blue-100:#B5D4F4; --blue-400:#378ADD; --blue-600:#185FA5; --blue-800:#0C447C; --blue-900:#042C53;
+    --teal-50:#E1F5EE; --teal-100:#9FE1CB; --teal-600:#0F6E56; --teal-800:#085041;
+    --amber-50:#FAEEDA; --amber-100:#FAC775; --amber-600:#854F0B; --amber-800:#633806;
+    --gray-50:#F1EFE8; --gray-100:#D3D1C7; --gray-200:#B4B2A9; --gray-400:#888780; --gray-600:#5F5E5A; --gray-800:#444441;
+    --purple-50:#EEEDFE; --purple-100:#CECBF6; --purple-600:#534AB7; --purple-800:#3C3489;
+    --red-50:#FCEBEB; --red-100:#F7C1C1; --red-800:#791F1F;
+    --bg:#F7F6F2; --surface:#FFFFFF;
+    --text-primary:#1A1918; --text-secondary:#5F5E5A; --text-tertiary:#888780;
+    --border:rgba(0,0,0,0.1); --border-strong:rgba(0,0,0,0.18);
+  }
+  body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text-primary); min-height:100vh; line-height:1.5; }
+
+  /* Header */
+  header { background:var(--blue-900); padding:2rem 2.5rem 1.75rem; display:flex; align-items:flex-start; justify-content:space-between; gap:1.5rem; flex-wrap:wrap; }
+  .logo-mark { display:flex; align-items:center; gap:10px; margin-bottom:.5rem; }
+  .logo-squares { display:grid; grid-template-columns:1fr 1fr; gap:3px; width:28px; height:28px; }
+  .logo-squares span { border-radius:3px; display:block; }
+  .logo-squares span:nth-child(1) { background:#378ADD; }
+  .logo-squares span:nth-child(2) { background:#185FA5; opacity:.7; }
+  .logo-squares span:nth-child(3) { background:#185FA5; opacity:.7; }
+  .logo-squares span:nth-child(4) { background:#378ADD; }
+  .logo-text { font-size:18px; font-weight:600; color:#fff; letter-spacing:-.02em; }
+  .header-title { font-size:13px; color:rgba(255,255,255,.5); font-weight:400; letter-spacing:.04em; text-transform:uppercase; }
+  .header-subtitle { font-size:22px; font-weight:500; color:#fff; margin-top:4px; letter-spacing:-.02em; }
+  .header-right { display:flex; flex-direction:column; align-items:flex-end; gap:8px; }
+  .badge { font-size:11px; padding:4px 10px; border-radius:4px; }
+  .badge-event { font-family:'DM Mono',monospace; background:rgba(255,255,255,.1); color:rgba(255,255,255,.7); letter-spacing:.02em; }
+  .badge-conf { background:var(--blue-600); color:var(--blue-50); }
+  .btn-update { font-size:12px; font-family:'DM Sans',sans-serif; background:rgba(255,255,255,.12); color:#fff; border:1px solid rgba(255,255,255,.25); border-radius:6px; padding:6px 14px; cursor:pointer; display:flex; align-items:center; gap:6px; transition:background .15s; }
+  .btn-update:hover { background:rgba(255,255,255,.2); }
+  .btn-update svg { width:14px; height:14px; flex-shrink:0; }
+
+  /* Stats bar */
+  .stats-bar { background:var(--blue-800); padding:0 2.5rem; display:flex; gap:0; flex-wrap:wrap; }
+  .stat-item { padding:1rem 2rem 1rem 0; margin-right:2rem; border-right:1px solid rgba(255,255,255,.1); }
+  .stat-item:last-child { border-right:none; }
+  .stat-num { font-size:24px; font-weight:500; color:#fff; letter-spacing:-.02em; }
+  .stat-lbl { font-size:11px; color:rgba(255,255,255,.45); text-transform:uppercase; letter-spacing:.05em; margin-top:2px; }
+
+  /* Upload drawer */
+  .upload-drawer { display:none; background:var(--surface); border-bottom:1px solid var(--border); }
+  .upload-drawer.open { display:block; }
+  .upload-inner { padding:1.5rem 2.5rem; max-width:720px; }
+  .upload-title { font-size:15px; font-weight:500; color:var(--text-primary); margin-bottom:4px; }
+  .upload-sub { font-size:13px; color:var(--text-secondary); margin-bottom:1rem; line-height:1.6; }
+  .upload-sub a { color:var(--blue-600); text-decoration:none; }
+  .upload-sub a:hover { text-decoration:underline; }
+  .drop-zone { border:2px dashed var(--border-strong); border-radius:10px; padding:2rem; text-align:center; cursor:pointer; transition:border-color .15s, background .15s; }
+  .drop-zone:hover, .drop-zone.drag-over { border-color:var(--blue-400); background:var(--blue-50); }
+  .drop-zone svg { width:32px; height:32px; color:var(--text-tertiary); margin-bottom:8px; }
+  .drop-label { font-size:14px; color:var(--text-secondary); }
+  .drop-label strong { color:var(--blue-600); cursor:pointer; }
+  .drop-hint { font-size:12px; color:var(--text-tertiary); margin-top:4px; }
+  #pdf-input { display:none; }
+  .file-chosen { font-size:13px; color:var(--teal-600); margin-top:10px; display:none; align-items:center; gap:6px; }
+  .file-chosen svg { width:14px; height:14px; }
+  .parse-actions { display:flex; align-items:center; gap:10px; margin-top:1rem; }
+  .btn-parse { font-size:13px; font-family:'DM Sans',sans-serif; background:var(--blue-900); color:#fff; border:none; border-radius:6px; padding:8px 20px; cursor:pointer; transition:opacity .15s; }
+  .btn-parse:disabled { opacity:.4; cursor:not-allowed; }
+  .btn-cancel { font-size:13px; font-family:'DM Sans',sans-serif; background:none; color:var(--text-secondary); border:1px solid var(--border-strong); border-radius:6px; padding:8px 16px; cursor:pointer; }
+  .parse-status { font-size:13px; color:var(--text-secondary); display:none; align-items:center; gap:8px; }
+  .spinner { width:14px; height:14px; border:2px solid var(--border-strong); border-top-color:var(--blue-600); border-radius:50%; animation:spin .7s linear infinite; flex-shrink:0; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .parse-error { font-size:13px; color:var(--red-800); background:var(--red-50); border:1px solid var(--red-100); border-radius:6px; padding:8px 12px; margin-top:10px; display:none; }
+  .last-updated { font-size:11px; color:rgba(255,255,255,.4); font-family:'DM Mono',monospace; }
+
+  /* Main */
+  .main { padding:2rem 2.5rem; max-width:1100px; }
+  .filter-row { display:flex; align-items:center; gap:8px; margin-bottom:1.5rem; flex-wrap:wrap; }
+  .filter-label { font-size:12px; color:var(--text-tertiary); margin-right:4px; }
+  .pill { font-size:12px; padding:5px 13px; border-radius:20px; border:1px solid var(--border-strong); background:var(--surface); color:var(--text-secondary); cursor:pointer; transition:all .15s; font-family:'DM Sans',sans-serif; }
+  .pill:hover { border-color:var(--blue-400); color:var(--blue-800); }
+  .pill.active { background:var(--blue-900); color:#fff; border-color:var(--blue-900); }
+  .section-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:.75rem; }
+  .section-header-label { font-size:11px; font-weight:500; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:.07em; }
+  .count-badge { font-size:11px; font-family:'DM Mono',monospace; background:var(--gray-50); color:var(--text-tertiary); padding:2px 8px; border-radius:4px; border:1px solid var(--border); }
+  .fund-grid { display:flex; flex-direction:column; gap:10px; }
+
+  /* Fund cards */
+  .fund-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden; transition:border-color .15s; }
+  .fund-card:hover { border-color:var(--blue-400); }
+  .fund-card.open { border-color:var(--blue-600); }
+  .card-top { padding:1rem 1.25rem; display:flex; align-items:center; gap:14px; cursor:pointer; user-select:none; }
+  .rank-circle { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:500; flex-shrink:0; }
+  .rank-p1 { background:var(--blue-50); color:var(--blue-800); }
+  .rank-p2 { background:var(--teal-50); color:var(--teal-800); }
+  .rank-p3 { background:var(--amber-50); color:var(--amber-800); }
+  .card-main { flex:1; min-width:0; }
+  .fund-name { font-size:15px; font-weight:500; color:var(--text-primary); }
+  .fund-sub { font-size:12px; color:var(--text-tertiary); margin-top:1px; }
+  .card-right { display:flex; align-items:center; gap:12px; flex-shrink:0; }
+  .tag-list { display:flex; gap:5px; flex-wrap:wrap; }
+  .tag { font-size:11px; padding:2px 8px; border-radius:10px; font-weight:400; }
+  .t-fintech { background:var(--blue-50); color:var(--blue-800); }
+  .t-data { background:var(--teal-50); color:var(--teal-800); }
+  .t-credit { background:var(--amber-50); color:var(--amber-800); }
+  .t-latam { background:#FBEAF0; color:#72243E; }
+  .t-growth { background:var(--purple-50); color:var(--purple-800); }
+  .fit-score { display:flex; flex-direction:column; align-items:flex-end; gap:4px; min-width:80px; }
+  .score-num { font-size:18px; font-weight:500; font-family:'DM Mono',monospace; }
+  .score-bar-wrap { width:80px; height:4px; background:var(--gray-100); border-radius:2px; }
+  .score-bar { height:4px; border-radius:2px; }
+  .chevron { font-size:16px; color:var(--text-tertiary); transition:transform .2s; width:20px; text-align:center; }
+  .open .chevron { transform:rotate(180deg); }
+  .priority-flag { font-size:10px; padding:2px 8px; border-radius:4px; font-weight:500; letter-spacing:.03em; }
+  .flag-p1 { background:var(--blue-800); color:#fff; }
+  .flag-p2 { background:var(--teal-100); color:var(--teal-800); }
+  .flag-p3 { background:var(--amber-100); color:var(--amber-800); }
+
+  /* Card detail */
+  .card-detail { display:none; padding:0 1.25rem 1.25rem; border-top:1px solid var(--border); }
+  .fund-card.open .card-detail { display:block; }
+  .detail-inner { padding-top:1rem; }
+  .detail-cols { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:1rem; }
+  .detail-box { background:var(--bg); border-radius:8px; padding:10px 12px; }
+  .detail-box-label { font-size:10px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:.06em; margin-bottom:3px; }
+  .detail-box-val { font-size:13px; font-weight:500; color:var(--text-primary); }
+  .section-row { margin-bottom:10px; }
+  .section-title { font-size:11px; font-weight:500; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px; }
+  .section-body { font-size:13px; color:var(--text-secondary); line-height:1.6; }
+  .pitch-box { background:var(--blue-50); border-radius:8px; padding:10px 12px; margin-top:10px; display:flex; gap:8px; align-items:flex-start; }
+  .pitch-icon { font-size:14px; color:var(--blue-600); margin-top:1px; flex-shrink:0; }
+  .pitch-text { font-size:12px; color:var(--blue-800); line-height:1.6; }
+  .pitch-text strong { font-weight:500; }
+
+  /* Excluded section */
+  .excl-section { padding:0 2.5rem 2rem; }
+  .excl-grid { display:flex; flex-direction:column; gap:6px; }
+  .excl-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:.75rem 1.25rem; display:grid; grid-template-columns:180px 130px 1fr; align-items:center; gap:16px; }
+  .excl-name { font-size:14px; font-weight:500; color:var(--text-primary); }
+  .excl-type { font-size:11px; color:var(--text-tertiary); margin-top:2px; }
+  .excl-reason-tag { font-size:11px; padding:3px 9px; border-radius:10px; font-weight:500; width:fit-content; }
+  .rt-stage { background:var(--amber-50); color:var(--amber-800); }
+  .rt-size { background:var(--gray-50); color:var(--gray-800); }
+  .rt-early { background:var(--purple-50); color:var(--purple-800); }
+  .rt-noinstitutional { background:var(--red-50); color:var(--red-800); }
+  .excl-note { font-size:12px; color:var(--text-tertiary); line-height:1.5; }
+
+  /* Empty state */
+  .empty-state { text-align:center; padding:4rem 2rem; }
+  .empty-state svg { width:40px; height:40px; color:var(--gray-200); margin-bottom:12px; }
+  .empty-title { font-size:15px; font-weight:500; color:var(--text-secondary); margin-bottom:6px; }
+  .empty-sub { font-size:13px; color:var(--text-tertiary); }
+
+  /* Footer */
+  footer { margin:2rem 2.5rem; padding-top:1.5rem; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
+  .footer-text { font-size:12px; color:var(--text-tertiary); }
+  .footer-logo { font-size:13px; font-weight:500; color:var(--text-tertiary); letter-spacing:-.01em; }
+
+  @media (max-width:600px) {
+    header,.main,footer,.excl-section { padding:1.25rem; }
+    .stats-bar { padding:0 1.25rem; }
+    .detail-cols { grid-template-columns:1fr 1fr; }
+    .card-right,.header-right { display:none; }
+    .excl-card { grid-template-columns:1fr; gap:6px; }
+    .upload-inner { padding:1.25rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo-mark">
+      <div class="logo-squares"><span></span><span></span><span></span><span></span></div>
+      <span class="logo-text">klavi</span>
+    </div>
+    <div class="header-title">Investor relations · Series B targets</div>
+    <div class="header-subtitle">Money20/20 USA 2026 — Fund outreach dashboard</div>
+  </div>
+  <div class="header-right">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end">
+      <span class="badge badge-event">OCT 18–21 · LAS VEGAS</span>
+      <a class="badge badge-event" href="https://www.money2020.com/money2020-usa" target="_blank" rel="noopener" style="text-decoration:none;display:flex;align-items:center;gap:4px">
+        Event website
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" style="width:11px;height:11px"><path d="M6 3H3a1 1 0 00-1 1v9a1 1 0 001 1h9a1 1 0 001-1v-3M9 2h5m0 0v5m0-5L7 10"/></svg>
+      </a>
+      <span class="badge badge-conf">Confidential · Internal use</span>
+    </div>
+    <span class="last-updated" id="last-updated-label"></span>
+    <button class="btn-update" onclick="toggleDrawer()">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2v8M5 7l3 3 3-3M3 12h10"/></svg>
+      Update attendee list
+    </button>
+  </div>
+</header>
+
+<!-- Upload drawer -->
+<div class="upload-drawer" id="upload-drawer">
+  <div class="upload-inner">
+    <div class="upload-title">Update from Money20/20 attendee PDF</div>
+    <div class="upload-sub">
+      Download the latest attendee list from the
+      <a href="https://www.money2020.com/money2020-usa" target="_blank" rel="noopener">Money20/20 USA website ↗</a>,
+      then upload it here. Claude will parse it, identify all investment funds, and re-rank them by fit for Klavi's Series B.
+    </div>
+    <div class="drop-zone" id="drop-zone" onclick="document.getElementById('pdf-input').click()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 16V4m0 0L8 8m4-4l4 4M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+      <div class="drop-label">Drop PDF here or <strong>browse</strong></div>
+      <div class="drop-hint">Money20/20 attending companies list · PDF only</div>
+    </div>
+    <input type="file" id="pdf-input" accept=".pdf,application/pdf">
+    <div class="file-chosen" id="file-chosen">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M13 5L6 12l-3-3"/></svg>
+      <span id="file-name"></span>
+    </div>
+    <div class="parse-actions">
+      <button class="btn-parse" id="btn-parse" disabled onclick="runParse()">Analyse &amp; update dashboard</button>
+      <button class="btn-cancel" onclick="toggleDrawer()">Cancel</button>
+      <div class="parse-status" id="parse-status">
+        <div class="spinner"></div>
+        <span id="parse-status-text">Sending to Claude...</span>
+      </div>
+    </div>
+    <div class="parse-error" id="parse-error"></div>
+  </div>
+</div>
+
+<div class="stats-bar">
+  <div class="stat-item"><div class="stat-num" id="stat-total">—</div><div class="stat-lbl">Active funds</div></div>
+  <div class="stat-item"><div class="stat-num" style="color:#9FE1CB" id="stat-p1">—</div><div class="stat-lbl">Priority 1</div></div>
+  <div class="stat-item"><div class="stat-num" style="color:#FAC775" id="stat-data">—</div><div class="stat-lbl">Data-focused</div></div>
+  <div class="stat-item"><div class="stat-num" style="color:rgba(255,255,255,0.4)">Series B</div><div class="stat-lbl">Stage focus</div></div>
+</div>
+
+<div class="main">
+  <div class="filter-row">
+    <span class="filter-label">Filter by focus:</span>
+    <button class="pill active" data-filter="all">All</button>
+    <button class="pill" data-filter="p1">Priority 1</button>
+    <button class="pill" data-filter="data">Data focus</button>
+    <button class="pill" data-filter="latam">LatAm</button>
+    <button class="pill" data-filter="credit">Credit / lending</button>
+  </div>
+  <div class="section-header">
+    <span class="section-header-label">Ranked by strategic fit for Klavi</span>
+    <span class="count-badge" id="count-label">—</span>
+  </div>
+  <div class="fund-grid" id="fund-grid"></div>
+</div>
+
+<div class="excl-section" id="excl-section" style="display:none">
+  <div class="section-header" style="margin-bottom:.75rem">
+    <span class="section-header-label">Excluded from active pipeline — reason logged</span>
+    <span class="count-badge" id="excl-count">—</span>
+  </div>
+  <div class="excl-grid" id="excl-grid"></div>
+</div>
+
+<footer>
+  <div class="footer-text">Money20/20 USA 2026 · Klavi IR team · Dashboard updates on demand via Claude AI</div>
+  <div class="footer-logo">klavi · investor relations</div>
+</footer>
+
+<script>
+const STORAGE_KEY = "klavi_ir_funds_v1";
+const UPDATED_KEY = "klavi_ir_updated_v1";
+
+let allFunds = [];
+let activeFilter = "all";
+let selectedFile = null;
+
+const tagLabels = { fintech:"fintech", data:"data", latam:"latam", credit:"credit / lending", growth:"growth equity" };
+const priorityLabel = { p1:"Priority 1", p2:"Priority 2", p3:"Priority 3" };
+const priorityFlagClass = { p1:"flag-p1", p2:"flag-p2", p3:"flag-p3" };
+const rankClass = { p1:"rank-p1", p2:"rank-p2", p3:"rank-p3" };
+const exclTagClass = {
+  "Too early stage":"rt-early",
+  "Too late stage":"rt-size",
+  "Not institutional VC":"rt-noinstitutional",
+  "No fintech focus":"rt-stage"
+};
+
+function scoreColor(s) {
+  if (s >= 88) return "#185FA5";
+  if (s >= 65) return "#0F6E56";
+  return "#888780";
+}
+
+function saveFunds(funds) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(funds));
+    const now = new Date().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
+    localStorage.setItem(UPDATED_KEY, now);
+  } catch(e) {}
+}
+
+function loadFunds() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch(e) { return null; }
+}
+
+function renderAll(funds, filter) {
+  const active = funds.filter(f => !f.excluded);
+  const excluded = funds.filter(f => f.excluded);
+  const filtered = filter === "all" ? active :
+    filter === "p1" ? active.filter(f => f.priority === "p1") :
+    filter === "data" ? active.filter(f => f.tags && f.tags.includes("data")) :
+    filter === "latam" ? active.filter(f => f.tags && f.tags.includes("latam")) :
+    filter === "credit" ? active.filter(f => f.tags && f.tags.includes("credit")) : active;
+
+  document.getElementById("stat-total").textContent = active.length;
+  document.getElementById("stat-p1").textContent = active.filter(f => f.priority === "p1").length;
+  document.getElementById("stat-data").textContent = active.filter(f => f.tags && f.tags.includes("data")).length;
+  document.getElementById("count-label").textContent = filtered.length + " fund" + (filtered.length !== 1 ? "s" : "");
+
+  const grid = document.getElementById("fund-grid");
+  if (filtered.length === 0) {
+    grid.innerHTML = `<div class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <div class="empty-title">No funds match this filter</div>
+      <div class="empty-sub">Try a different filter or upload an updated attendee list.</div>
+    </div>`;
+  } else {
+    grid.innerHTML = filtered.map((f, i) => {
+      const color = scoreColor(f.fitScore || 0);
+      const tagHtml = (f.tags || []).map(t => `<span class="tag t-${t}">${tagLabels[t] || t}</span>`).join("");
+      return `
+      <div class="fund-card" id="fc-${i}">
+        <div class="card-top" onclick="toggle(${i})">
+          <div class="rank-circle ${rankClass[f.priority] || 'rank-p3'}">${i + 1}</div>
+          <div class="card-main">
+            <div class="fund-name">${f.name}</div>
+            <div class="fund-sub">${f.type || ""} · ${f.stage || ""}</div>
+          </div>
+          <div class="card-right">
+            <div class="tag-list">${tagHtml}</div>
+            <span class="priority-flag ${priorityFlagClass[f.priority] || 'flag-p3'}">${priorityLabel[f.priority] || "P3"}</span>
+            <div class="fit-score">
+              <span class="score-num" style="color:${color}">${f.fitScore || 0}</span>
+              <div class="score-bar-wrap"><div class="score-bar" style="width:${f.fitScore || 0}%;background:${color}"></div></div>
+            </div>
+            <span class="chevron">&#8964;</span>
+          </div>
+        </div>
+        <div class="card-detail">
+          <div class="detail-inner">
+            <div class="detail-cols">
+              <div class="detail-box"><div class="detail-box-label">AUM / fund size</div><div class="detail-box-val">${f.aum || "Unknown"}</div></div>
+              <div class="detail-box"><div class="detail-box-label">Typical check</div><div class="detail-box-val">${f.typicalCheck || "Unknown"}</div></div>
+              <div class="detail-box"><div class="detail-box-label">Headquarters</div><div class="detail-box-val">${f.hq || "Unknown"}</div></div>
+            </div>
+            <div class="section-row"><div class="section-title">Why they fit Klavi</div><div class="section-body">${f.why || ""}</div></div>
+            <div class="section-row"><div class="section-title">Relevant portfolio</div><div class="section-body">${f.portfolio || "—"}</div></div>
+            <div class="pitch-box">
+              <span class="pitch-icon">&#9670;</span>
+              <div class="pitch-text"><strong>Recommended pitch angle &mdash;</strong> ${f.pitch || ""}</div>
+            </div>
+          </div>
+        </div>
+      </div>`;
+    }).join("");
+  }
+
+  const exclSection = document.getElementById("excl-section");
+  const exclGrid = document.getElementById("excl-grid");
+  if (excluded.length > 0) {
+    exclSection.style.display = "block";
+    document.getElementById("excl-count").textContent = excluded.length + " fund" + (excluded.length !== 1 ? "s" : "");
+    exclGrid.innerHTML = excluded.map(f => `
+      <div class="excl-card">
+        <div><div class="excl-name">${f.name}</div><div class="excl-type">${f.type || ""}</div></div>
+        <span class="excl-reason-tag ${exclTagClass[f.excludedTag] || 'rt-stage'}">${f.excludedTag || "Excluded"}</span>
+        <div class="excl-note">${f.excludedReason || ""}</div>
+      </div>`).join("");
+  } else {
+    exclSection.style.display = "none";
+  }
+}
+
+function renderEmpty() {
+  document.getElementById("fund-grid").innerHTML = `
+    <div class="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 16V4m0 0L8 8m4-4l4 4M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+      <div class="empty-title">No attendee data yet</div>
+      <div class="empty-sub">Click "Update attendee list" in the header to upload the Money20/20 PDF and generate the fund rankings.</div>
+    </div>`;
+  document.getElementById("stat-total").textContent = "—";
+  document.getElementById("stat-p1").textContent = "—";
+  document.getElementById("stat-data").textContent = "—";
+  document.getElementById("count-label").textContent = "—";
+}
+
+function toggle(i) {
+  const card = document.getElementById("fc-" + i);
+  const isOpen = card.classList.contains("open");
+  document.querySelectorAll(".fund-card.open").forEach(c => c.classList.remove("open"));
+  if (!isOpen) card.classList.add("open");
+}
+
+function toggleDrawer() {
+  const drawer = document.getElementById("upload-drawer");
+  drawer.classList.toggle("open");
+  resetUploadUI();
+}
+
+function resetUploadUI() {
+  selectedFile = null;
+  document.getElementById("pdf-input").value = "";
+  document.getElementById("file-chosen").style.display = "none";
+  document.getElementById("btn-parse").disabled = true;
+  document.getElementById("parse-status").style.display = "none";
+  document.getElementById("parse-error").style.display = "none";
+  document.getElementById("drop-zone").classList.remove("drag-over");
+}
+
+document.getElementById("pdf-input").addEventListener("change", function() {
+  if (this.files && this.files[0]) {
+    selectedFile = this.files[0];
+    document.getElementById("file-name").textContent = selectedFile.name;
+    document.getElementById("file-chosen").style.display = "flex";
+    document.getElementById("btn-parse").disabled = false;
+    document.getElementById("parse-error").style.display = "none";
+  }
+});
+
+const dropZone = document.getElementById("drop-zone");
+dropZone.addEventListener("dragover", e => { e.preventDefault(); dropZone.classList.add("drag-over"); });
+dropZone.addEventListener("dragleave", () => dropZone.classList.remove("drag-over"));
+dropZone.addEventListener("drop", e => {
+  e.preventDefault();
+  dropZone.classList.remove("drag-over");
+  const file = e.dataTransfer.files[0];
+  if (file && file.type === "application/pdf") {
+    selectedFile = file;
+    document.getElementById("file-name").textContent = file.name;
+    document.getElementById("file-chosen").style.display = "flex";
+    document.getElementById("btn-parse").disabled = false;
+    document.getElementById("parse-error").style.display = "none";
+  }
+});
+
+async function toBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(",")[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function runParse() {
+  if (!selectedFile) return;
+  const btn = document.getElementById("btn-parse");
+  const status = document.getElementById("parse-status");
+  const statusText = document.getElementById("parse-status-text");
+  const errorBox = document.getElementById("parse-error");
+
+  btn.disabled = true;
+  errorBox.style.display = "none";
+  status.style.display = "flex";
+  statusText.textContent = "Reading PDF...";
+
+  try {
+    const pdfBase64 = await toBase64(selectedFile);
+    statusText.textContent = "Sending to Claude — this takes ~20 seconds...";
+
+    const response = await fetch("/.netlify/functions/parse-attendees", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pdfBase64 })
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({ error: "Unknown error" }));
+      throw new Error(err.error || "Server error " + response.status);
+    }
+
+    const data = await response.json();
+    if (!data.funds || !Array.isArray(data.funds)) throw new Error("Invalid response from server");
+
+    allFunds = data.funds;
+    saveFunds(allFunds);
+
+    const saved = localStorage.getItem(UPDATED_KEY);
+    if (saved) document.getElementById("last-updated-label").textContent = "Last updated " + saved;
+
+    status.style.display = "none";
+    toggleDrawer();
+    renderAll(allFunds, activeFilter);
+  } catch (err) {
+    status.style.display = "none";
+    btn.disabled = false;
+    errorBox.textContent = "Error: " + err.message;
+    errorBox.style.display = "block";
+  }
+}
+
+document.querySelectorAll(".pill").forEach(btn => {
+  btn.addEventListener("click", function() {
+    document.querySelectorAll(".pill").forEach(b => b.classList.remove("active"));
+    this.classList.add("active");
+    activeFilter = this.dataset.filter;
+    if (allFunds.length > 0) renderAll(allFunds, activeFilter);
+  });
+});
+
+(function init() {
+  const saved = loadFunds();
+  const updatedAt = localStorage.getItem(UPDATED_KEY);
+  if (saved && saved.length > 0) {
+    allFunds = saved;
+    if (updatedAt) document.getElementById("last-updated-label").textContent = "Last updated " + updatedAt;
+    renderAll(allFunds, activeFilter);
+  } else {
+    renderEmpty();
+  }
+})();
+</script>
+</body>
+</html>
