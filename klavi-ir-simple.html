@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Klavi · IR Target Dashboard — Money20/20 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --blue-50:#E6F1FB; --blue-100:#B5D4F4; --blue-400:#378ADD; --blue-600:#185FA5; --blue-800:#0C447C; --blue-900:#042C53;
+    --teal-50:#E1F5EE; --teal-100:#9FE1CB; --teal-600:#0F6E56; --teal-800:#085041;
+    --amber-50:#FAEEDA; --amber-100:#FAC775; --amber-600:#854F0B; --amber-800:#633806;
+    --gray-50:#F1EFE8; --gray-100:#D3D1C7; --gray-200:#B4B2A9; --gray-400:#888780; --gray-600:#5F5E5A; --gray-800:#444441;
+    --purple-50:#EEEDFE; --purple-100:#CECBF6; --purple-800:#3C3489;
+    --red-50:#FCEBEB; --red-100:#F7C1C1; --red-800:#791F1F;
+    --green-50:#EAF3DE; --green-100:#C0DD97; --green-800:#27500A;
+    --bg:#F7F6F2; --surface:#FFFFFF;
+    --text-primary:#1A1918; --text-secondary:#5F5E5A; --text-tertiary:#888780;
+    --border:rgba(0,0,0,0.1); --border-strong:rgba(0,0,0,0.18);
+  }
+  body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text-primary); min-height:100vh; line-height:1.5; }
+
+  /* Header */
+  header { background:var(--blue-900); padding:2rem 2.5rem 1.75rem; display:flex; align-items:flex-start; justify-content:space-between; gap:1.5rem; flex-wrap:wrap; }
+  .logo-mark { display:flex; align-items:center; gap:10px; margin-bottom:.5rem; }
+  .logo-squares { display:grid; grid-template-columns:1fr 1fr; gap:3px; width:28px; height:28px; }
+  .logo-squares span { border-radius:3px; display:block; }
+  .logo-squares span:nth-child(1) { background:#378ADD; }
+  .logo-squares span:nth-child(2) { background:#185FA5; opacity:.7; }
+  .logo-squares span:nth-child(3) { background:#185FA5; opacity:.7; }
+  .logo-squares span:nth-child(4) { background:#378ADD; }
+  .logo-text { font-size:18px; font-weight:600; color:#fff; letter-spacing:-.02em; }
+  .header-title { font-size:13px; color:rgba(255,255,255,.5); font-weight:400; letter-spacing:.04em; text-transform:uppercase; }
+  .header-subtitle { font-size:22px; font-weight:500; color:#fff; margin-top:4px; letter-spacing:-.02em; }
+  .header-right { display:flex; flex-direction:column; align-items:flex-end; gap:8px; }
+  .header-badges { display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+  .badge { font-size:11px; padding:4px 10px; border-radius:4px; text-decoration:none; }
+  .badge-dark { font-family:'DM Mono',monospace; background:rgba(255,255,255,.1); color:rgba(255,255,255,.7); letter-spacing:.02em; }
+  .badge-blue { background:var(--blue-600); color:var(--blue-50); }
+  .badge-link { display:flex; align-items:center; gap:4px; transition:background .15s; }
+  .badge-link:hover { background:rgba(255,255,255,.18); }
+  .last-updated { font-size:11px; color:rgba(255,255,255,.35); font-family:'DM Mono',monospace; }
+  .btn-header { font-size:12px; font-family:'DM Sans',sans-serif; border:1px solid rgba(255,255,255,.25); border-radius:6px; padding:6px 14px; cursor:pointer; display:flex; align-items:center; gap:6px; transition:background .15s; background:rgba(255,255,255,.12); color:#fff; }
+  .btn-header:hover { background:rgba(255,255,255,.2); }
+  .btn-header svg { width:14px; height:14px; flex-shrink:0; }
+
+  /* Stats */
+  .stats-bar { background:var(--blue-800); padding:0 2.5rem; display:flex; flex-wrap:wrap; }
+  .stat-item { padding:1rem 2rem 1rem 0; margin-right:2rem; border-right:1px solid rgba(255,255,255,.1); }
+  .stat-item:last-child { border-right:none; }
+  .stat-num { font-size:24px; font-weight:500; color:#fff; letter-spacing:-.02em; }
+  .stat-lbl { font-size:11px; color:rgba(255,255,255,.4); text-transform:uppercase; letter-spacing:.05em; margin-top:2px; }
+
+  /* Update drawer */
+  .drawer { display:none; background:var(--surface); border-bottom:1px solid var(--border); }
+  .drawer.open { display:block; }
+  .drawer-inner { padding:1.75rem 2.5rem; max-width:780px; }
+  .drawer-title { font-size:16px; font-weight:500; margin-bottom:4px; }
+  .drawer-sub { font-size:13px; color:var(--text-secondary); line-height:1.6; margin-bottom:1.5rem; }
+
+  .steps { display:flex; flex-direction:column; gap:12px; margin-bottom:1.5rem; }
+  .step { display:flex; gap:14px; align-items:flex-start; }
+  .step-num { width:24px; height:24px; border-radius:50%; background:var(--blue-900); color:#fff; font-size:11px; font-weight:500; display:flex; align-items:center; justify-content:center; flex-shrink:0; margin-top:1px; }
+  .step-body { flex:1; }
+  .step-label { font-size:13px; font-weight:500; color:var(--text-primary); margin-bottom:3px; }
+  .step-desc { font-size:12px; color:var(--text-secondary); line-height:1.6; }
+  .step-actions { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
+
+  .btn-action { font-size:12px; font-family:'DM Sans',sans-serif; padding:6px 14px; border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; gap:6px; text-decoration:none; transition:opacity .15s; border:none; }
+  .btn-action svg { width:13px; height:13px; flex-shrink:0; }
+  .btn-primary { background:var(--blue-900); color:#fff; }
+  .btn-primary:hover { opacity:.88; }
+  .btn-secondary { background:var(--bg); color:var(--text-primary); border:1px solid var(--border-strong); }
+  .btn-secondary:hover { border-color:var(--blue-400); }
+
+  .json-area-wrap { position:relative; }
+  .json-area { width:100%; min-height:100px; max-height:200px; border:1px solid var(--border-strong); border-radius:8px; padding:10px 12px; font-size:12px; font-family:'DM Mono',monospace; color:var(--text-primary); background:var(--bg); resize:vertical; line-height:1.6; }
+  .json-area:focus { outline:none; border-color:var(--blue-400); }
+  .json-area::placeholder { color:var(--text-tertiary); }
+  .json-actions { display:flex; align-items:center; gap:10px; margin-top:10px; }
+  .btn-apply { font-size:13px; font-family:'DM Sans',sans-serif; background:var(--blue-900); color:#fff; border:none; border-radius:6px; padding:8px 20px; cursor:pointer; transition:opacity .15s; }
+  .btn-apply:hover { opacity:.88; }
+  .btn-apply:disabled { opacity:.35; cursor:not-allowed; }
+  .btn-close { font-size:13px; font-family:'DM Sans',sans-serif; background:none; color:var(--text-secondary); border:1px solid var(--border-strong); border-radius:6px; padding:8px 16px; cursor:pointer; }
+  .json-error { font-size:12px; color:var(--red-800); background:var(--red-50); border:1px solid var(--red-100); border-radius:6px; padding:8px 12px; margin-top:8px; display:none; }
+  .json-success { font-size:12px; color:var(--green-800); background:var(--green-50); border:1px solid var(--green-100); border-radius:6px; padding:8px 12px; margin-top:8px; display:none; }
+
+  .divider { border:none; border-top:1px solid var(--border); margin:1.25rem 0; }
+
+  /* Prompt preview */
+  .prompt-box { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:12px 14px; margin-top:8px; }
+  .prompt-box pre { font-size:11px; font-family:'DM Mono',monospace; color:var(--text-secondary); white-space:pre-wrap; line-height:1.7; }
+  .prompt-copy { font-size:11px; color:var(--blue-600); cursor:pointer; border:none; background:none; font-family:'DM Sans',sans-serif; margin-top:6px; padding:0; display:flex; align-items:center; gap:4px; }
+  .prompt-copy:hover { text-decoration:underline; }
+
+  /* Main */
+  .main { padding:2rem 2.5rem; }
+  .filter-row { display:flex; align-items:center; gap:8px; margin-bottom:1.5rem; flex-wrap:wrap; }
+  .filter-label { font-size:12px; color:var(--text-tertiary); margin-right:4px; }
+  .pill { font-size:12px; padding:5px 13px; border-radius:20px; border:1px solid var(--border-strong); background:var(--surface); color:var(--text-secondary); cursor:pointer; transition:all .15s; font-family:'DM Sans',sans-serif; }
+  .pill:hover { border-color:var(--blue-400); color:var(--blue-800); }
+  .pill.active { background:var(--blue-900); color:#fff; border-color:var(--blue-900); }
+  .section-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:.75rem; }
+  .section-lbl { font-size:11px; font-weight:500; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:.07em; }
+  .count-badge { font-size:11px; font-family:'DM Mono',monospace; background:var(--gray-50); color:var(--text-tertiary); padding:2px 8px; border-radius:4px; border:1px solid var(--border); }
+  .fund-grid { display:flex; flex-direction:column; gap:10px; }
+
+  /* Fund cards */
+  .fund-card { background:var(--surface); border:1px solid var(--border); border-radius:12px; overflow:hidden; transition:border-color .15s; }
+  .fund-card:hover { border-color:var(--blue-400); }
+  .fund-card.open { border-color:var(--blue-600); }
+  .card-top { padding:1rem 1.25rem; display:flex; align-items:center; gap:14px; cursor:pointer; user-select:none; }
+  .rank-circle { width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:500; flex-shrink:0; }
+  .rk-p1 { background:var(--blue-50); color:var(--blue-800); }
+  .rk-p2 { background:var(--teal-50); color:var(--teal-800); }
+  .rk-p3 { background:var(--amber-50); color:var(--amber-800); }
+  .card-main { flex:1; min-width:0; }
+  .fund-name { font-size:15px; font-weight:500; }
+  .fund-sub { font-size:12px; color:var(--text-tertiary); margin-top:1px; }
+  .card-right { display:flex; align-items:center; gap:12px; flex-shrink:0; }
+  .tag-list { display:flex; gap:5px; flex-wrap:wrap; }
+  .tag { font-size:11px; padding:2px 8px; border-radius:10px; }
+  .t-fintech { background:var(--blue-50); color:var(--blue-800); }
+  .t-data { background:var(--teal-50); color:var(--teal-800); }
+  .t-credit { background:var(--amber-50); color:var(--amber-800); }
+  .t-latam { background:#FBEAF0; color:#72243E; }
+  .t-growth { background:var(--purple-50); color:var(--purple-800); }
+  .fit-score { display:flex; flex-direction:column; align-items:flex-end; gap:4px; min-width:80px; }
+  .score-num { font-size:18px; font-weight:500; font-family:'DM Mono',monospace; }
+  .score-bar-bg { width:80px; height:4px; background:var(--gray-100); border-radius:2px; }
+  .score-bar { height:4px; border-radius:2px; }
+  .pflag { font-size:10px; padding:2px 8px; border-radius:4px; font-weight:500; letter-spacing:.03em; }
+  .pf-p1 { background:var(--blue-800); color:#fff; }
+  .pf-p2 { background:var(--teal-100); color:var(--teal-800); }
+  .pf-p3 { background:var(--amber-100); color:var(--amber-800); }
+  .chevron { font-size:16px; color:var(--text-tertiary); transition:transform .2s; width:20px; text-align:center; }
+  .open .chevron { transform:rotate(180deg); }
+
+  .card-detail { display:none; padding:0 1.25rem 1.25rem; border-top:1px solid var(--border); }
+  .fund-card.open .card-detail { display:block; }
+  .detail-inner { padding-top:1rem; }
+  .detail-cols { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:1rem; }
+  .dbox { background:var(--bg); border-radius:8px; padding:10px 12px; }
+  .dbox-lbl { font-size:10px; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:.06em; margin-bottom:3px; }
+  .dbox-val { font-size:13px; font-weight:500; }
+  .srow { margin-bottom:10px; }
+  .stitle { font-size:11px; font-weight:500; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:.05em; margin-bottom:4px; }
+  .sbody { font-size:13px; color:var(--text-secondary); line-height:1.6; }
+  .pitch-box { background:var(--blue-50); border-radius:8px; padding:10px 12px; margin-top:10px; display:flex; gap:8px; align-items:flex-start; }
+  .pitch-icon { color:var(--blue-600); margin-top:1px; flex-shrink:0; font-size:14px; }
+  .pitch-text { font-size:12px; color:var(--blue-800); line-height:1.6; }
+  .pitch-text strong { font-weight:500; }
+
+  /* Excluded */
+  .excl-section { padding:0 2.5rem 2rem; }
+  .excl-grid { display:flex; flex-direction:column; gap:6px; }
+  .excl-card { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:.75rem 1.25rem; display:grid; grid-template-columns:180px 140px 1fr; align-items:center; gap:16px; }
+  .excl-name { font-size:14px; font-weight:500; }
+  .excl-type { font-size:11px; color:var(--text-tertiary); margin-top:2px; }
+  .excl-tag { font-size:11px; padding:3px 9px; border-radius:10px; font-weight:500; width:fit-content; }
+  .et-early { background:var(--purple-50); color:var(--purple-800); }
+  .et-late { background:var(--gray-50); color:var(--gray-800); }
+  .et-noinst { background:var(--red-50); color:var(--red-800); }
+  .et-nofocus { background:var(--amber-50); color:var(--amber-800); }
+  .excl-note { font-size:12px; color:var(--text-tertiary); line-height:1.5; }
+
+  /* Empty state */
+  .empty-state { text-align:center; padding:4rem 2rem; }
+  .empty-icon { font-size:32px; margin-bottom:12px; color:var(--gray-200); }
+  .empty-title { font-size:15px; font-weight:500; color:var(--text-secondary); margin-bottom:6px; }
+  .empty-sub { font-size:13px; color:var(--text-tertiary); max-width:380px; margin:0 auto; line-height:1.6; }
+  .empty-btn { margin-top:1.25rem; display:inline-flex; align-items:center; gap:6px; font-size:13px; font-family:'DM Sans',sans-serif; background:var(--blue-900); color:#fff; border:none; border-radius:6px; padding:8px 18px; cursor:pointer; }
+  .empty-btn:hover { opacity:.88; }
+
+  /* Footer */
+  footer { margin:2rem 2.5rem; padding-top:1.5rem; border-top:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; }
+  .footer-text { font-size:12px; color:var(--text-tertiary); }
+  .footer-logo { font-size:13px; font-weight:500; color:var(--text-tertiary); letter-spacing:-.01em; }
+
+  @media(max-width:640px){
+    header,.main,.excl-section,footer,.drawer-inner { padding:1.25rem; }
+    .stats-bar { padding:0 1.25rem; }
+    .card-right,.header-right { display:none; }
+    .detail-cols,.excl-card { grid-template-columns:1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="logo-mark">
+      <div class="logo-squares"><span></span><span></span><span></span><span></span></div>
+      <span class="logo-text">klavi</span>
+    </div>
+    <div class="header-title">Investor relations · Series B targets</div>
+    <div class="header-subtitle">Money20/20 USA 2026 — Fund outreach dashboard</div>
+  </div>
+  <div class="header-right">
+    <div class="header-badges">
+      <span class="badge badge-dark">OCT 18–21 · LAS VEGAS</span>
+      <a class="badge badge-dark badge-link" href="https://us.money2020.com/attend/who-attends" target="_blank" rel="noopener">
+        Attendee list
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 3H3a1 1 0 00-1 1v9a1 1 0 001 1h9a1 1 0 001-1v-3M9 2h5m0 0v5m0-5L7 10"/></svg>
+      </a>
+      <a class="badge badge-dark badge-link" href="https://www.money2020.com/money2020-usa" target="_blank" rel="noopener">
+        Event website
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 3H3a1 1 0 00-1 1v9a1 1 0 001 1h9a1 1 0 001-1v-3M9 2h5m0 0v5m0-5L7 10"/></svg>
+      </a>
+      <span class="badge badge-blue">Confidential · Internal</span>
+    </div>
+    <span class="last-updated" id="last-updated"></span>
+    <button class="btn-header" onclick="toggleDrawer()">
+      <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2v8M5 7l3 3 3-3M3 12h10"/></svg>
+      Update attendee list
+    </button>
+  </div>
+</header>
+
+<!-- Update drawer -->
+<div class="drawer" id="drawer">
+  <div class="drawer-inner">
+    <div class="drawer-title">Update fund list from Money20/20 attendees</div>
+    <div class="drawer-sub">Follow the three steps below. No API key needed — Claude.ai does the analysis for you.</div>
+
+    <div class="steps">
+
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <div class="step-label">Download the latest attendee PDF</div>
+          <div class="step-desc">Go to the Money20/20 attendee page and download the most recent PDF of attending companies.</div>
+          <div class="step-actions">
+            <a class="btn-action btn-primary" href="https://us.money2020.com/attend/who-attends" target="_blank" rel="noopener">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 3H3a1 1 0 00-1 1v9a1 1 0 001 1h9a1 1 0 001-1v-3M9 2h5m0 0v5m0-5L7 10"/></svg>
+              Open Money20/20 attendee page
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <div class="step-label">Open Claude with the analysis prompt pre-filled</div>
+          <div class="step-desc">Click the button below to open Claude.ai with the prompt already loaded. Attach the PDF you just downloaded and press send. Copy the entire JSON response Claude returns.</div>
+          <div class="step-actions">
+            <a class="btn-action btn-primary" id="claude-link" href="#" target="_blank" rel="noopener">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 3H3a1 1 0 00-1 1v9a1 1 0 001 1h9a1 1 0 001-1v-3M9 2h5m0 0v5m0-5L7 10"/></svg>
+              Open Claude with prompt
+            </a>
+            <button class="btn-action btn-secondary" onclick="copyPrompt()">
+              <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="5" width="9" height="9" rx="1"/><path d="M3 11V3a1 1 0 011-1h8"/></svg>
+              <span id="copy-label">Copy prompt</span>
+            </button>
+          </div>
+          <div class="prompt-box">
+            <pre id="prompt-text"></pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <div class="step-label">Paste the JSON Claude returned here</div>
+          <div class="step-desc">Copy Claude's full response (starting with <code style="font-size:11px;font-family:'DM Mono',monospace">[</code> and ending with <code style="font-size:11px;font-family:'DM Mono',monospace">]</code>) and paste it below, then click Apply.</div>
+          <div class="json-area-wrap" style="margin-top:8px">
+            <textarea class="json-area" id="json-input" placeholder='[ { "name": "General Atlantic", "fitScore": 97, ... } ]' oninput="validateJson()"></textarea>
+          </div>
+          <div class="json-error" id="json-error"></div>
+          <div class="json-success" id="json-success"></div>
+          <div class="json-actions">
+            <button class="btn-apply" id="btn-apply" onclick="applyJson()" disabled>Apply &amp; update dashboard</button>
+            <button class="btn-close" onclick="toggleDrawer()">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="stats-bar">
+  <div class="stat-item"><div class="stat-num" id="stat-total">—</div><div class="stat-lbl">Active funds</div></div>
+  <div class="stat-item"><div class="stat-num" style="color:#9FE1CB" id="stat-p1">—</div><div class="stat-lbl">Priority 1</div></div>
+  <div class="stat-item"><div class="stat-num" style="color:#FAC775" id="stat-data">—</div><div class="stat-lbl">Data-focused</div></div>
+  <div class="stat-item"><div class="stat-num" style="color:rgba(255,255,255,.4)">Series B</div><div class="stat-lbl">Stage focus</div></div>
+</div>
+
+<div class="main">
+  <div class="filter-row">
+    <span class="filter-label">Filter:</span>
+    <button class="pill active" data-filter="all">All</button>
+    <button class="pill" data-filter="p1">Priority 1</button>
+    <button class="pill" data-filter="data">Data focus</button>
+    <button class="pill" data-filter="latam">LatAm</button>
+    <button class="pill" data-filter="credit">Credit / lending</button>
+  </div>
+  <div class="section-header">
+    <span class="section-lbl">Ranked by strategic fit for Klavi</span>
+    <span class="count-badge" id="count-label">—</span>
+  </div>
+  <div class="fund-grid" id="fund-grid"></div>
+</div>
+
+<div class="excl-section" id="excl-section" style="display:none">
+  <div class="section-header" style="margin-bottom:.75rem">
+    <span class="section-lbl">Excluded from active pipeline — reason logged</span>
+    <span class="count-badge" id="excl-count">—</span>
+  </div>
+  <div class="excl-grid" id="excl-grid"></div>
+</div>
+
+<footer>
+  <div class="footer-text">Money20/20 USA 2026 · Klavi IR team · Updated on demand via Claude.ai</div>
+  <div class="footer-logo">klavi · investor relations</div>
+</footer>
+
+<script>
+const STORAGE_KEY = "klavi_ir_v2";
+const UPDATED_KEY = "klavi_ir_updated_v2";
+
+const PROMPT = `You are an expert investment analyst helping Klavi, a Brazilian fintech startup, prepare for Money20/20 USA 2026.
+
+About Klavi: Series B raise. World's first Open Finance bureau — aggregates consented bank transaction data in Brazil and sells B2B intelligence for credit risk, fraud prevention, KYC, and commercial intelligence. Key metrics: 7M+ consents, 798% user growth, 468% NRR, >70% gross margin, $1T Brazilian credit market opportunity.
+
+The attached PDF is the official Money20/20 USA 2026 attendee/company list.
+
+Your task:
+1. Extract every company name from the PDF.
+2. Identify which are investment funds, venture capital firms, private equity firms, or corporate VC arms.
+3. For each fund, evaluate fit as a Series B investor for Klavi and return a JSON array.
+
+For each fund use EXACTLY this structure:
+{
+  "name": "Fund name",
+  "type": "VC / Growth Equity / Corporate VC / PE / Crowdfunding",
+  "stage": "e.g. Series A-C",
+  "aum": "e.g. ~$500M or Unknown",
+  "typicalCheck": "e.g. $10M-$50M or Unknown",
+  "hq": "City, Country",
+  "tags": ["fintech","data","latam","credit","growth"],
+  "fitScore": 85,
+  "priority": "p1",
+  "why": "2-3 sentences on fit for Klavi Series B",
+  "portfolio": "Notable relevant portfolio companies",
+  "pitch": "Specific recommended pitch angle for Klavi",
+  "excluded": false,
+  "excludedReason": "",
+  "excludedTag": ""
+}
+
+Rules:
+- tags: only use from this set: fintech, data, latam, credit, growth
+- fitScore: 0-100. Only strong Series B fits score above 60.
+- priority: p1 = fitScore >= 85, p2 = 65-84, p3 < 65
+- For funds NOT fit for Series B: set excluded: true, excludedReason to one sentence, excludedTag to one of: "Too early stage" / "Too late stage" / "Not institutional VC" / "No fintech focus". Set fitScore: 0, priority: "p3".
+
+Respond with ONLY a valid JSON array. No markdown, no explanation, no code fences. Start with [ end with ].`;
+
+let allFunds = [];
+let activeFilter = "all";
+
+const tagLabels = { fintech:"fintech", data:"data", latam:"latam", credit:"credit / lending", growth:"growth equity" };
+const exclTagClass = { "Too early stage":"et-early","Too late stage":"et-late","Not institutional VC":"et-noinst","No fintech focus":"et-nofocus" };
+
+function scoreColor(s) {
+  if (s >= 88) return "#185FA5";
+  if (s >= 65) return "#0F6E56";
+  return "#888780";
+}
+
+function rankClass(p) { return p === "p1" ? "rk-p1" : p === "p2" ? "rk-p2" : "rk-p3"; }
+function flagClass(p) { return p === "p1" ? "pf-p1" : p === "p2" ? "pf-p2" : "pf-p3"; }
+function flagLabel(p) { return p === "p1" ? "Priority 1" : p === "p2" ? "Priority 2" : "Priority 3"; }
+
+function save(funds) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(funds));
+    const d = new Date().toLocaleDateString("en-US",{month:"short",day:"numeric",year:"numeric"});
+    localStorage.setItem(UPDATED_KEY, d);
+    document.getElementById("last-updated").textContent = "Last updated " + d;
+  } catch(e){}
+}
+
+function load() {
+  try { const r = localStorage.getItem(STORAGE_KEY); return r ? JSON.parse(r) : null; } catch(e){ return null; }
+}
+
+function renderAll(funds, filter) {
+  const active = funds.filter(f => !f.excluded);
+  const excl = funds.filter(f => f.excluded);
+  const shown = filter === "all" ? active :
+    filter === "p1" ? active.filter(f => f.priority === "p1") :
+    filter === "data" ? active.filter(f => (f.tags||[]).includes("data")) :
+    filter === "latam" ? active.filter(f => (f.tags||[]).includes("latam")) :
+    filter === "credit" ? active.filter(f => (f.tags||[]).includes("credit")) : active;
+
+  document.getElementById("stat-total").textContent = active.length;
+  document.getElementById("stat-p1").textContent = active.filter(f => f.priority === "p1").length;
+  document.getElementById("stat-data").textContent = active.filter(f => (f.tags||[]).includes("data")).length;
+  document.getElementById("count-label").textContent = shown.length + " fund" + (shown.length !== 1 ? "s" : "");
+
+  const grid = document.getElementById("fund-grid");
+  if (shown.length === 0) {
+    grid.innerHTML = `<div class="empty-state"><div class="empty-icon">&#9632;</div><div class="empty-title">No funds match this filter</div><div class="empty-sub">Try a different filter or update the attendee list.</div></div>`;
+  } else {
+    grid.innerHTML = shown.map((f, i) => {
+      const c = scoreColor(f.fitScore || 0);
+      const tags = (f.tags||[]).map(t => `<span class="tag t-${t}">${tagLabels[t]||t}</span>`).join("");
+      return `<div class="fund-card" id="fc-${i}">
+        <div class="card-top" onclick="toggle(${i})">
+          <div class="rank-circle ${rankClass(f.priority)}">${i+1}</div>
+          <div class="card-main">
+            <div class="fund-name">${f.name}</div>
+            <div class="fund-sub">${f.type||""} · ${f.stage||""}</div>
+          </div>
+          <div class="card-right">
+            <div class="tag-list">${tags}</div>
+            <span class="pflag ${flagClass(f.priority)}">${flagLabel(f.priority)}</span>
+            <div class="fit-score">
+              <span class="score-num" style="color:${c}">${f.fitScore||0}</span>
+              <div class="score-bar-bg"><div class="score-bar" style="width:${f.fitScore||0}%;background:${c}"></div></div>
+            </div>
+            <span class="chevron">&#8964;</span>
+          </div>
+        </div>
+        <div class="card-detail">
+          <div class="detail-inner">
+            <div class="detail-cols">
+              <div class="dbox"><div class="dbox-lbl">AUM</div><div class="dbox-val">${f.aum||"Unknown"}</div></div>
+              <div class="dbox"><div class="dbox-lbl">Typical check</div><div class="dbox-val">${f.typicalCheck||"Unknown"}</div></div>
+              <div class="dbox"><div class="dbox-lbl">Headquarters</div><div class="dbox-val">${f.hq||"Unknown"}</div></div>
+            </div>
+            <div class="srow"><div class="stitle">Why they fit Klavi</div><div class="sbody">${f.why||""}</div></div>
+            <div class="srow"><div class="stitle">Relevant portfolio</div><div class="sbody">${f.portfolio||"—"}</div></div>
+            <div class="pitch-box"><span class="pitch-icon">&#9670;</span><div class="pitch-text"><strong>Pitch angle &mdash;</strong> ${f.pitch||""}</div></div>
+          </div>
+        </div>
+      </div>`;
+    }).join("");
+  }
+
+  const es = document.getElementById("excl-section");
+  if (excl.length > 0) {
+    es.style.display = "block";
+    document.getElementById("excl-count").textContent = excl.length + " fund" + (excl.length !== 1 ? "s" : "");
+    document.getElementById("excl-grid").innerHTML = excl.map(f => `
+      <div class="excl-card">
+        <div><div class="excl-name">${f.name}</div><div class="excl-type">${f.type||""}</div></div>
+        <span class="excl-tag ${exclTagClass[f.excludedTag]||'et-nofocus'}">${f.excludedTag||"Excluded"}</span>
+        <div class="excl-note">${f.excludedReason||""}</div>
+      </div>`).join("");
+  } else { es.style.display = "none"; }
+}
+
+function renderEmpty() {
+  document.getElementById("fund-grid").innerHTML = `
+    <div class="empty-state">
+      <svg style="width:40px;height:40px;color:var(--gray-200);margin-bottom:12px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M12 16V4m0 0L8 8m4-4l4 4M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
+      <div class="empty-title">No fund data yet</div>
+      <div class="empty-sub">Click "Update attendee list" to upload the Money20/20 PDF to Claude and import the results here.</div>
+      <button class="empty-btn" onclick="toggleDrawer()">
+        <svg style="width:14px;height:14px" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 2v8M5 7l3 3 3-3M3 12h10"/></svg>
+        Update attendee list
+      </button>
+    </div>`;
+  ["stat-total","stat-p1","stat-data","count-label"].forEach(id => document.getElementById(id).textContent = "—");
+}
+
+function toggle(i) {
+  const c = document.getElementById("fc-"+i);
+  const was = c.classList.contains("open");
+  document.querySelectorAll(".fund-card.open").forEach(x => x.classList.remove("open"));
+  if (!was) c.classList.add("open");
+}
+
+function toggleDrawer() {
+  const d = document.getElementById("drawer");
+  d.classList.toggle("open");
+  if (!d.classList.contains("open")) resetDrawer();
+}
+
+function resetDrawer() {
+  document.getElementById("json-input").value = "";
+  document.getElementById("json-error").style.display = "none";
+  document.getElementById("json-success").style.display = "none";
+  document.getElementById("btn-apply").disabled = true;
+}
+
+function validateJson() {
+  const val = document.getElementById("json-input").value.trim();
+  const errBox = document.getElementById("json-error");
+  const btn = document.getElementById("btn-apply");
+  errBox.style.display = "none";
+  if (!val) { btn.disabled = true; return; }
+  try {
+    const parsed = JSON.parse(val);
+    if (!Array.isArray(parsed)) throw new Error("Expected a JSON array starting with [");
+    btn.disabled = false;
+  } catch(e) {
+    errBox.textContent = "Invalid JSON: " + e.message;
+    errBox.style.display = "block";
+    btn.disabled = true;
+  }
+}
+
+function applyJson() {
+  const val = document.getElementById("json-input").value.trim();
+  const errBox = document.getElementById("json-error");
+  const okBox = document.getElementById("json-success");
+  try {
+    const parsed = JSON.parse(val);
+    if (!Array.isArray(parsed)) throw new Error("Expected a JSON array");
+    allFunds = parsed;
+    save(allFunds);
+    okBox.textContent = "✓ " + parsed.length + " funds imported successfully. Dashboard updated.";
+    okBox.style.display = "block";
+    errBox.style.display = "none";
+    renderAll(allFunds, activeFilter);
+    setTimeout(() => { toggleDrawer(); }, 1200);
+  } catch(e) {
+    errBox.textContent = "Could not apply: " + e.message;
+    errBox.style.display = "block";
+  }
+}
+
+function copyPrompt() {
+  navigator.clipboard.writeText(PROMPT).then(() => {
+    const lbl = document.getElementById("copy-label");
+    lbl.textContent = "Copied!";
+    setTimeout(() => lbl.textContent = "Copy prompt", 2000);
+  });
+}
+
+document.querySelectorAll(".pill").forEach(btn => {
+  btn.addEventListener("click", function() {
+    document.querySelectorAll(".pill").forEach(b => b.classList.remove("active"));
+    this.classList.add("active");
+    activeFilter = this.dataset.filter;
+    if (allFunds.length > 0) renderAll(allFunds, activeFilter);
+  });
+});
+
+(function init() {
+  const enc = encodeURIComponent(PROMPT);
+  document.getElementById("claude-link").href = "https://claude.ai/new?q=" + enc;
+  document.getElementById("prompt-text").textContent = PROMPT;
+
+  const saved = load();
+  const updatedAt = localStorage.getItem(UPDATED_KEY);
+  if (saved && saved.length > 0) {
+    allFunds = saved;
+    if (updatedAt) document.getElementById("last-updated").textContent = "Last updated " + updatedAt;
+    renderAll(allFunds, activeFilter);
+  } else {
+    renderEmpty();
+  }
+})();
+</script>
+</body>
+</html>
